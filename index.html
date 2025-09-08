@@ -1,16 +1,159 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>救護義消看板平台</title><link rel="icon" href="assets/favicon.png"><script src="https://cdn.tailwindcss.com"></script><meta name="color-scheme" content="light dark"><style>.card{border-radius:1rem;box-shadow:0 6px 24px rgba(15,23,42,.08);padding:1.25rem;background:rgba(255,255,255,.96);backdrop-filter:blur(6px)}.chip{display:inline-block;font-size:.75rem;padding:.125rem .5rem;border-radius:9999px;background:#eef2ff;color:#3730a3}.btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem 1rem;border-radius:.75rem;border:1px solid #CBD5E1;transition:.2s}.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.12)}.btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}.hidden{display:none}.tab-active{background:#0ea5e9;color:#fff;border-color:#0ea5e9}.grid-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}</style></head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-blue-100 text-slate-800">
-<header class="max-w-7xl mx-auto px-4 pt-6 pb-3 flex items-center gap-3"><img src="assets/logo.png" class="w-10 h-10" alt="logo"><div><h1 class="text-2xl font-bold">救護義消看板平台</h1><p class="text-sm text-slate-600">活動排程・出席統計（含分隊）・相簿・教育訓練・協勤經歷分享</p></div><nav class="ml-auto flex flex-wrap gap-2"><button class="btn tab-active" data-tab="tab-schedule">活動排程</button><button class="btn" data-tab="tab-stats">出席統計</button><button class="btn" data-tab="tab-gallery">活動相簿</button><button class="btn" data-tab="tab-training">教育訓練</button><button class="btn" data-tab="tab-experience">協勤經歷</button><a class="btn" href="tutorial.html">教學</a><button class="btn" data-tab="tab-admin">管理</button></nav></header>
-<main class="max-w-7xl mx-auto px-4 pb-24 space-y-8">
-<section id="tab-schedule" class="card"><div class="flex items-center justify-between mb-3"><h2 class="text-xl font-semibold">📅 活動排程</h2><div class="text-sm text-slate-500">由幹部編輯試算表 <span class="chip">免登入瀏覽 / 免註冊報名</span></div></div><div id="calendar-embed" class="w-full aspect-video bg-white rounded-xl overflow-hidden mb-4"></div><div id="event-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="no-events" class="hidden text-center text-slate-500 py-8">目前沒有即將舉辦的活動。</div></section>
-<section id="tab-stats" class="card hidden"><h2 class="text-xl font-semibold mb-4">📊 出席統計（含分隊）</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="card"><h3 class="font-semibold mb-2">本月出勤 Top 10</h3><ol id="top-attendees" class="list-decimal pl-6 space-y-1 text-sm"></ol></div><div class="card"><h3 class="font-semibold mb-2">每場活動出席人數</h3><ul id="per-event-counts" class="space-y-1 text-sm"></ul></div></div></section>
-<section id="tab-gallery" class="card hidden"><div class="flex items-center justify-between mb-3"><h2 class="text-xl font-semibold">📷 活動相簿（大版面）</h2><div class="text-xs text-slate-500">相簿連結請設「任何知道連結者可查看」</div></div><div id="album-list" class="grid-gallery"></div></section>
-<section id="tab-training" class="card hidden"><div class="flex items-center justify-between mb-3"><h2 class="text-xl font-semibold">🎓 教育訓練</h2><button class="btn" id="btn-add-training">＋ 分享一篇</button></div><div id="training-list" class="space-y-3"></div><div id="training-empty" class="text-sm text-slate-500">尚無文章，歡迎分享心得。</div></section>
-<section id="tab-experience" class="card hidden"><div class="flex items-center justify-between mb-3"><h2 class="text-xl font-semibold">📝 協勤經歷分享</h2><button class="btn" id="btn-add-exp">＋ 新增分享</button></div><div id="exp-list" class="space-y-3"></div><div id="exp-empty" class="text-sm text-slate-500">尚無分享，歡迎投稿。</div></section>
-<section id="tab-admin" class="card hidden"><h2 class="text-xl font-semibold mb-4">🛠 管理（幹部用）</h2><p class="text-sm text-slate-600 mb-3">幹部可於 Google 試算表編輯 <b>Events</b>；或在此確認出席名單與文章（需 PIN）。</p><div class="flex items-end gap-2 mb-4"><div><label class="block text-xs">管理 PIN</label><input id="admin-pin" class="border rounded-lg px-3 py-2" placeholder="輸入 PIN"></div><button class="btn btn-primary" id="btn-load-pending">載入待處理</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3"><div><h3 class="font-semibold mb-2">出席待確認</h3><div id="pending-list" class="space-y-2"></div></div><div><h3 class="font-semibold mb-2">文章待審核（教育訓練／協勤經歷）</h3><div id="pending-posts" class="space-y-2"></div></div></div><p class="text-xs text-slate-500 mt-3">也可直接在試算表修改 <code>Attendance.status</code> 或 <code>Trainings/Experiences.status</code>。</p></section>
-</main>
-<div id="join-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"><h3 class="text-lg font-semibold mb-2">報名參加</h3><p id="join-event-title" class="text-sm text-slate-600 mb-4"></p><form id="join-form" class="space-y-3"><input type="hidden" id="jf-event-id"><div><label class="block text-sm mb-1">姓名</label><input class="w-full border rounded-xl px-3 py-2" id="jf-name" placeholder="請輸入姓名" required></div><div><label class="block text-sm mb-1">分隊</label><select id="jf-division" class="w-full border rounded-xl px-3 py-2"></select></div><div class="flex items-center gap-2"><input type="checkbox" id="jf-confirm" class="h-4 w-4" required><label for="jf-confirm" class="text-sm">我確定會出席</label></div><div class="flex justify-end gap-2 pt-2"><button type="button" id="jf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div></form><p id="jf-result" class="text-sm mt-3"></p></div></div>
-<div id="post-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6"><h3 class="text-lg font-semibold mb-2" id="post-title">張貼內容</h3><form id="post-form" class="space-y-3"><div><label class="block text-sm mb-1">標題</label><input id="pf-title" class="w-full border rounded-xl px-3 py-2" required></div><div><label class="block text-sm mb-1">內文</label><textarea id="pf-content" class="w-full border rounded-xl px-3 py-2 h-36" required></textarea></div><div><label class="block text-sm mb-1">圖片網址（可選）</label><input id="pf-image" class="w-full border rounded-xl px-3 py-2" placeholder="https://..."></div><div class="flex justify-end gap-2"><button type="button" id="pf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div></form><p id="pf-result" class="text-sm mt-3"></p></div></div>
-<footer class="text-center text-xs text-slate-500 py-8">© <span id="year"></span> 救護義消看板平台（免登入瀏覽 / 幹部共享維護 / 文章審核）</footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script src="app.js"></script></body></html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>救護義消看板平台</title>
+  <link rel="icon" href="assets/favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html{scroll-behavior:smooth}
+    .card{border-radius:1rem;box-shadow:0 6px 24px rgba(15,23,42,.08);padding:1.25rem;background:rgba(255,255,255,.96)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem 1rem;border-radius:.75rem;border:1px solid #CBD5E1;transition:.2s}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.12)}
+    .btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    .grid-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .chip{display:inline-block;font-size:.75rem;padding:.125rem .5rem;border-radius:9999px;background:#eef2ff;color:#3730a3}
+    .anchor{scroll-margin-top:84px}
+    .topnav a{border:1px solid #CBD5E1;border-radius:.75rem;padding:.5rem .9rem;background:#fff}
+    .topnav a:hover{background:#f8fafc}
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <!-- 頂部 -->
+  <header class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <img src="assets/logo.png" class="w-8 h-8" alt="logo"/>
+      <div class="mr-auto">
+        <h1 class="text-xl font-bold">救護義消看板平台</h1>
+        <p class="text-xs text-slate-600">活動排程・出席統計・相簿・教育訓練・協勤經歷・管理</p>
+      </div>
+      <!-- 頂部錨點導覽（單頁） -->
+      <nav class="topnav hidden md:flex gap-2">
+        <a href="#schedule">行事曆</a>
+        <a href="#stats">統計</a>
+        <a href="#gallery">相簿</a>
+        <a href="#training">教育訓練</a>
+        <a href="#experience">協勤經歷</a>
+        <a href="#admin">管理</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-24 space-y-8 mt-4">
+
+    <!-- 活動排程 -->
+    <section id="schedule" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📅 活動排程</h2>
+        <div class="text-sm text-slate-500">由幹部編輯試算表 <span class="chip">免登入瀏覽 / 免註冊報名</span></div>
+      </div>
+      <div id="calendar-embed" class="w-full aspect-video bg-white rounded-xl overflow-hidden mb-4"></div>
+      <div id="event-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div id="no-events" class="hidden text-center text-slate-500 py-8">目前沒有即將舉辦的活動</div>
+    </section>
+
+    <!-- 出席統計 -->
+    <section id="stats" class="anchor card">
+      <h2 class="text-xl font-semibold mb-4">📊 出席統計（含分隊）</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card">
+          <h3 class="font-semibold mb-2">本月出勤 Top 10</h3>
+          <ol id="top-attendees" class="list-decimal pl-6 space-y-1 text-sm"></ol>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold mb-2">每場活動出席人數</h3>
+          <ul id="per-event-counts" class="space-y-1 text-sm"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 活動相簿 -->
+    <section id="gallery" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📷 活動相簿（大版面）</h2>
+        <div class="text-xs text-slate-500">相簿連結請設「任何知道連結者可查看」</div>
+      </div>
+      <div id="album-list" class="grid-gallery"></div>
+    </section>
+
+    <!-- 教育訓練 -->
+    <section id="training" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">🎓 教育訓練</h2>
+        <button class="btn" id="btn-add-training">＋ 分享一篇</button>
+      </div>
+      <div id="training-list" class="space-y-3"></div>
+      <div id="training-empty" class="text-sm text-slate-500">尚無文章</div>
+    </section>
+
+    <!-- 協勤經歷 -->
+    <section id="experience" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📝 協勤經歷分享</h2>
+        <button class="btn" id="btn-add-exp">＋ 新增分享</button>
+      </div>
+      <div id="exp-list" class="space-y-3"></div>
+      <div id="exp-empty" class="text-sm text-slate-500">尚無分享</div>
+    </section>
+
+    <!-- 管理（幹部） -->
+    <section id="admin" class="anchor card">
+      <h2 class="text-xl font-semibold mb-4">🛠 管理（幹部用）</h2>
+      <div class="flex items-end gap-2 mb-4">
+        <div>
+          <label class="block text-xs">管理 PIN（若有設定）</label>
+          <input id="admin-pin" class="border rounded-lg px-3 py-2" placeholder="輸入 PIN" />
+        </div>
+        <button class="btn btn-primary" id="btn-load-pending">載入待處理</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <h3 class="font-semibold mb-2">出席待確認</h3>
+          <div id="pending-list" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">文章待審核</h3>
+          <div id="pending-posts" class="space-y-2"></div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">也可直接在試算表修改 Attendance/Trainings/Experiences 的 status。</p>
+    </section>
+  </main>
+
+  <!-- 報名 Modal -->
+  <div id="join-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-semibold mb-2">報名參加</h3>
+      <p id="join-event-title" class="text-sm text-slate-600 mb-4"></p>
+      <form id="join-form" class="space-y-3">
+        <input type="hidden" id="jf-event-id" />
+        <div><label class="block text-sm mb-1">姓名</label><input class="w-full border rounded-xl px-3 py-2" id="jf-name" required /></div>
+        <div><label class="block text-sm mb-1">分隊</label><select id="jf-division" class="w-full border rounded-xl px-3 py-2"></select></div>
+        <div class="flex items-center gap-2"><input type="checkbox" id="jf-confirm" class="h-4 w-4" required /><label for="jf-confirm" class="text-sm">我確定會出席</label></div>
+        <div class="flex justify-end gap-2 pt-2"><button type="button" id="jf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div>
+      </form>
+      <p id="jf-result" class="text-sm mt-3"></p>
+    </div>
+  </div>
+
+  <!-- 投稿 Modal -->
+  <div id="post-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+      <h3 class="text-lg font-semibold mb-2" id="post-title">張貼內容</h3>
+      <form id="post-form" class="space-y-3">
+        <div><label class="block text-sm mb-1">標題</label><input id="pf-title" class="w-full border rounded-xl px-3 py-2" required /></div>
+        <div><label class="block text-sm mb-1">內文</label><textarea id="pf-content" class="w-full border rounded-xl px-3 py-2 h-36" required></textarea></div>
+        <div><label class="block text-sm mb-1">圖片網址（可選）</label><input id="pf-image" class="w-full border rounded-xl px-3 py-2" placeholder="https://..." /></div>
+        <div class="flex justify-end gap-2"><button type="button" id="pf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div>
+      </form>
+      <p id="pf-result" class="text-sm mt-3"></p>
+    </div>
+  </div>
+
+  <footer class="text-center text-xs text-slate-500 py-8">© <span id="year"></span> 救護義消看板平台</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
