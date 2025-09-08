@@ -1,0 +1,27 @@
+{
+  "apiBase": "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyEVtW_mbnjGeZQ6Sysi5i5iw38h-uNCa4mYDXdnxGbFntOIyJiDZQn5LXjBvjd0W3Aiw/exec/exec",
+  "calendarEmbed": "",
+  "calendarPublicUrl": "",
+  "divisions": [
+    "第一大隊：苗栗分隊",
+    "第一大隊：頭屋分隊",
+    "第一大隊：公館分隊",
+    "第一大隊：銅鑼分隊",
+    "第一大隊：三義分隊",
+    "第二大隊：竹南分隊",
+    "第二大隊：後龍分隊",
+    "第二大隊：造橋分隊",
+    "第三大隊：頭份分隊",
+    "第三大隊：三灣分隊",
+    "第三大隊：南庄分隊",
+    "第四大隊：通霄分隊",
+    "第四大隊：苑裡分隊",
+    "第四大隊：西湖分隊",
+    "第五大隊：大湖分隊",
+    "第五大隊：獅潭分隊",
+    "第五大隊：泰安分隊",
+    "第五大隊：卓蘭分隊",
+    "第五大隊：象鼻分隊"
+  ],
+  "adminPin": ""
+}
