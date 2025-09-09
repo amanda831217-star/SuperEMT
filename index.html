@@ -1,772 +1,235 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SuperEMT — 出勤管理 / 相簿 / 分享</title>
-
-  <!-- Tailwind (CDN) -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>救護義消看板平台</</title>
+  <link rel="icon" href="assets/favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS for Excel export -->
+  <!-- 用於產生 Excel 的 SheetJS（只在你點匯出時用到） -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <style>
-    html,body { font-family: 'Noto Sans TC', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8fafc; color:#0f172a; }
-    .card { background:white; border:1px solid #e6e9ee; border-radius:18px; box-shadow:0 6px 18px rgba(15,23,42,0.03); }
-    .btn { display:inline-flex; gap:8px; align-items:center; padding:8px 14px; border-radius:12px; border:1px solid #e6e9ee; background:#fff; cursor:pointer; }
-    .input { width:100%; padding:8px 10px; border-radius:10px; border:1px solid #e6e9ee; }
-    .cover-img { width:100%; height:220px; object-fit:cover; border-radius:12px; }
-    .day-cell { cursor:pointer; user-select:none; }
-    .badge { background:#0ea5e9; color:white; padding:2px 8px; border-radius:999px; font-size:12px; }
-    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; padding:16px; }
+    html{scroll-behavior:smooth}
+    .card{border-radius:1rem;box-shadow:0 6px 24px rgba(15,23,42,.08);padding:1.25rem;background:rgba(255,255,255,.96)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem 1rem;border-radius:.75rem;border:1px solid #CBD5E1;transition:.2s}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.12)}
+    .btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    .grid-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .chip{display:inline-block;font-size:.75rem;padding:.125rem .5rem;border-radius:9999px;background:#eef2ff;color:#3730a3}
+    .anchor{scroll-margin-top:84px}
+    .topnav a{border:1px solid #CBD5E1;border-radius:.75rem;padding:.5rem .9rem;background:#fff}
+    .topnav a:hover{background:#f8fafc}
+    dialog::backdrop{background:rgba(0,0,0,.35)}
   </style>
 </head>
-<body>
-  <header class="sticky top-0 bg-white/80 backdrop-blur z-30 border-b border-gray-200">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="text-2xl">🚑</div>
-        <h1 class="text-xl font-semibold">SuperEMT 出勤管理平台</h1>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <header class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <img src="assets/logo.png" class="w-8 h-8" alt="logo"/>
+      <div class="mr-auto">
+        <h1 class="text-xl font-bold">救護義消看板平台</h1>
+        <p class="text-xs text-slate-600">活動排程・出席統計・相簿・教育訓練・協勤經歷・管理</p>
       </div>
-      <nav class="hidden md:flex gap-4 text-sm">
-        <a href="#calendar" class="hover:text-sky-600">日曆</a>
-        <a href="#attendance" class="hover:text-sky-600">出勤</a>
-        <a href="#album" class="hover:text-sky-600">活動相簿</a>
-        <a href="#shares" class="hover:text-sky-600">分享</a>
+      <nav class="topnav hidden md:flex gap-2">
+        <a href="#schedule">行事曆</a>
+        <a href="#stats">統計</a>
+        <a href="#gallery">相簿</a>
+        <a href="#training">教育訓練</a>
+        <a href="#experience">協勤經歷</a>
+        <a href="#admin">管理</a>
       </nav>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto p-4 space-y-6">
-    <!-- 日曆 + 快速出勤 -->
-    <section id="calendar" class="card p-6">
-      <div class="flex items-start justify-between mb-4">
-        <div>
-          <h2 class="text-2xl font-semibold">出勤月曆</h2>
-          <p class="text-sm text-gray-500">點選日曆上的日期加入或檢視出勤。日曆會標示有出勤的日期。</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button class="btn" id="prevMonthBtn">◀</button>
-          <div id="monthLabel" class="font-medium"></div>
-          <button class="btn" id="nextMonthBtn">▶</button>
-        </div>
+  <main class="max-w-7xl mx-auto px-4 pb-24 space-y-8 mt-4">
+
+    <!-- 活動排程 -->
+    <section id="schedule" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📅 活動排程</h2>
+        <div class="text-sm text-slate-500">由幹部編輯試算表 <span class="chip">免登入瀏覽 / 免註冊報名</span></div>
       </div>
-
-      <div class="grid lg:grid-cols-3 gap-6">
-        <!-- Calendar -->
-        <div class="card p-4">
-          <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-sm"></div>
-        </div>
-
-        <!-- Quick add / selected-day events -->
-        <div class="card p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <div>
-              <div class="text-sm text-gray-500">選取日期</div>
-              <div id="selectedDateLabel" class="text-lg font-semibold"></div>
-            </div>
-            <div>
-              <button class="btn" onclick="openAttendanceModal()">新增出勤</button>
-            </div>
-          </div>
-
-          <div>
-            <h3 class="text-sm text-gray-500 mb-2">該日出勤</h3>
-            <ul id="eventsList" class="space-y-2"></ul>
-            <p id="noEvents" class="text-gray-400 text-sm hidden">該日無出勤紀錄。</p>
-          </div>
-        </div>
-
-        <!-- Aggregates & Export -->
-        <div class="card p-4">
-          <div class="mb-4 flex justify-between items-center">
-            <h3 class="text-lg font-semibold">統計與匯出</h3>
-            <button class="btn" onclick="downloadExcel()">匯出 Excel</button>
-          </div>
-
-          <div class="grid grid-cols-1 gap-3">
-            <div class="p-3 border rounded-lg">
-              <div class="text-xs text-gray-500">本月總出勤筆數</div>
-              <div id="totalCount" class="text-2xl font-bold">0</div>
-            </div>
-            <div class="p-3 border rounded-lg">
-              <div class="text-xs text-gray-500">人員名冊（去重）</div>
-              <div id="rosterCount" class="text-2xl font-bold">0</div>
-            </div>
-            <div class="p-3 border rounded-lg">
-              <div class="text-xs text-gray-500">最常出勤</div>
-              <div id="topPerson" class="text-lg font-semibold">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="calendar-embed" class="w-full aspect-video bg-white rounded-xl overflow-hidden mb-4"></div>
+      <div id="event-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div id="no-events" class="hidden text-center text-slate-500 py-8">目前沒有即將舉辦的活動</div>
     </section>
 
-    <!-- 出勤管理表 -->
-    <section id="attendance" class="card p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-semibold">出勤清單管理</h2>
-        <div class="flex gap-2">
-          <button class="btn" onclick="openAttendanceModal()">新增出勤</button>
-          <button class="btn" onclick="downloadExcel()">匯出 Excel</button>
-          <button class="btn" onclick="clearAllConfirm()">清空所有出勤</button>
+    <!-- 出席統計（新增：匯出 Excel 按鈕） -->
+    <section id="stats" class="anchor card">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold mb-4">📊 出席統計（含分隊）</h2>
+        <button id="btn-export-xlsx" class="btn" title="下載全體出席報表">匯出 Excel</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card">
+          <h3 class="font-semibold mb-2">本月出勤 Top 10</h3>
+          <ol id="top-attendees" class="list-decimal pl-6 space-y-1 text-sm"></ol>
+        </div>
+        <div class="card">
+          <h3 class="font-semibold mb-2">每場活動出席人數</h3>
+          <ul id="per-event-counts" class="space-y-1 text-sm"></ul>
         </div>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50">
-            <tr class="text-left">
-              <th class="p-2">姓名</th>
-              <th class="p-2">日期</th>
-              <th class="p-2">備註</th>
-              <th class="p-2 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody id="attendanceTbody"></tbody>
-        </table>
-      </div>
+      <p class="text-xs text-slate-500 mt-2">匯出的 Excel 會包含「依姓名+分隊的出勤次數」以及「原始登記明細」。</p>
     </section>
 
-    <!-- 相簿 -->
-    <section id="album" class="card p-6">
-      <div class="flex items-start justify-between mb-4">
-        <div>
-          <h2 class="text-2xl font-semibold">活動相簿</h2>
-          <p class="text-sm text-gray-500">首頁會直接顯示設定的封面照片（來自你提供的共享圖片 URL）。</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="albumLink" class="input" placeholder="雲端相簿連結 (可選)" />
-          <input id="coverCount" class="input w-28" type="number" min="1" max="12" placeholder="封面數" />
-          <button class="btn" onclick="saveAlbumSettings()">儲存</button>
-          <button class="btn" onclick="openAlbumModal()">管理相簿</button>
-        </div>
+    <!-- 活動相簿 -->
+    <section id="gallery" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📷 活動相簿（大版面）</h2>
+        <div class="text-xs text-slate-500">相簿連結請設「任何知道連結者可查看」</div>
       </div>
-
-      <div id="albumCovers" class="grid md:grid-cols-3 gap-4"></div>
+      <div id="album-list" class="grid-gallery"></div>
     </section>
 
-    <!-- 分享：教育訓練 / 協勤經歷 -->
-    <section id="shares" class="card p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-semibold">分享平台</h2>
-        <div class="flex gap-2">
-          <button class="btn" onclick="openArticleModal('training')">新增教育訓練分享</button>
-          <button class="btn" onclick="openArticleModal('duty')">新增協勤經歷分享</button>
-        </div>
+    <!-- 教育訓練 -->
+    <section id="training" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">🎓 教育訓練</h2>
+        <button class="btn" id="btn-add-training">＋ 分享一篇</button>
       </div>
-
-      <div class="grid md:grid-cols-2 gap-4">
-        <div>
-          <h3 class="font-semibold mb-2">教育訓練分享</h3>
-          <div id="trainingList" class="space-y-3"></div>
-          <p id="trainingEmpty" class="text-sm text-gray-400 hidden">尚無分享。</p>
-        </div>
-
-        <div>
-          <h3 class="font-semibold mb-2">協勤經歷分享</h3>
-          <div id="dutyList" class="space-y-3"></div>
-          <p id="dutyEmpty" class="text-sm text-gray-400 hidden">尚無分享。</p>
-        </div>
-      </div>
+      <div id="training-list" class="space-y-3"></div>
+      <div id="training-empty" class="text-sm text-slate-500">尚無文章</div>
     </section>
 
-    <footer class="text-center text-xs text-gray-500 py-6">© <span id="year"></span> SuperEMT</footer>
+    <!-- 協勤經歷 -->
+    <section id="experience" class="anchor card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-semibold">📝 協勤經歷分享</h2>
+        <button class="btn" id="btn-add-exp">＋ 新增分享</button>
+      </div>
+      <div id="exp-list" class="space-y-3"></div>
+      <div id="exp-empty" class="text-sm text-slate-500">尚無分享</div>
+    </section>
+
+    <!-- 管理（幹部） -->
+    <section id="admin" class="anchor card">
+      <h2 class="text-xl font-semibold mb-4">🛠 管理（幹部用）</h2>
+      <div class="flex items-end gap-2 mb-4">
+        <div>
+          <label class="block text-xs">管理 PIN（若有設定）</label>
+          <input id="admin-pin" class="border rounded-lg px-3 py-2" placeholder="輸入 PIN" />
+        </div>
+        <button class="btn btn-primary" id="btn-load-pending">載入待處理</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <h3 class="font-semibold mb-2">出席待確認</h3>
+          <div id="pending-list" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">文章待審核</h3>
+          <div id="pending-posts" class="space-y-2"></div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-3">也可直接在試算表修改 Attendance/Trainings/Experiences 的 status。</p>
+    </section>
   </main>
 
-  <!-- ===== Modals ===== -->
+  <!-- 報名 Modal -->
+  <div id="join-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+      <h3 class="text-lg font-semibold mb-2">報名參加</h3>
+      <p id="join-event-title" class="text-sm text-slate-600 mb-4"></p>
+      <form id="join-form" class="space-y-3">
+        <input type="hidden" id="jf-event-id" />
+        <div>
+          <label class="block text-sm mb-1">姓名</label>
+          <input class="w-full border rounded-xl px-3 py-2" id="jf-name" required />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">分隊</label>
+          <select id="jf-division" class="w-full border rounded-xl px-3 py-2"></select>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="jf-confirm" class="h-4 w-4" required />
+          <label for="jf-confirm" class="text-sm">我確定會出席</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="jf-cancel" class="btn">取消</button>
+          <button type="submit" class="btn btn-primary">送出</button>
+        </div>
+      </form>
+      <p id="jf-result" class="text-sm mt-3"></p>
+    </div>
+  </div>
 
-  <!-- Attendance Modal -->
-  <div id="attendanceModal" class="hidden">
-    <div class="modal-backdrop" onclick="closeAttendanceModal()">
-      <div class="card max-w-xl w-full p-4" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold">新增 / 編輯 出勤</h3>
-          <button class="btn" onclick="closeAttendanceModal()">關閉</button>
-        </div>
-        <div class="space-y-3">
-          <input id="att_name" class="input" placeholder="姓名（必填）" />
-          <input id="att_date" class="input" type="date" />
-          <input id="att_note" class="input" placeholder="備註（值勤別/班別）" />
-          <div class="flex justify-end gap-2">
-            <button class="btn" onclick="saveAttendance()">儲存</button>
-          </div>
-        </div>
+  <!-- （重點）分享文章 Dialog：修正按了「＋分享」沒有跳出的問題 -->
+  <dialog id="dlg-share" class="rounded-2xl p-0 w-full max-w-xl">
+    <form id="share-form" method="dialog" class="p-5 space-y-3">
+      <input type="hidden" id="share-kind" value="training"/>
+      <h3 class="text-lg font-semibold">分享內容</h3>
+      <div>
+        <label class="block text-sm mb-1">標題</label>
+        <input id="share-title" class="w-full border rounded-xl px-3 py-2" required />
       </div>
-    </div>
-  </div>
-
-  <!-- Album Modal -->
-  <div id="albumModal" class="hidden">
-    <div class="modal-backdrop" onclick="closeAlbumModal()">
-      <div class="card max-w-3xl w-full p-4" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold">管理相簿封面照片</h3>
-          <button class="btn" onclick="closeAlbumModal()">關閉</button>
-        </div>
-        <div class="grid md:grid-cols-3 gap-3 mb-3">
-          <input id="album_img_url" class="input" placeholder="圖片 URL（Google Drive 請使用公開分享 URL）" />
-          <input id="album_img_title" class="input" placeholder="圖片說明（選填）" />
-          <button class="btn" onclick="addAlbumImage()">新增照片</button>
-        </div>
-        <div id="albumManageList" class="grid md:grid-cols-2 gap-3"></div>
+      <div>
+        <label class="block text-sm mb-1">內文</label>
+        <textarea id="share-content" class="w-full border rounded-xl px-3 py-2 h-28" required></textarea>
       </div>
-    </div>
-  </div>
-
-  <!-- Article Modal -->
-  <div id="articleModal" class="hidden">
-    <div class="modal-backdrop" onclick="closeArticleModal()">
-      <div class="card max-w-2xl w-full p-4" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between mb-3">
-          <h3 id="articleModalTitle" class="font-semibold">新增分享</h3>
-          <button class="btn" onclick="closeArticleModal()">關閉</button>
-        </div>
-
-        <div class="space-y-3">
-          <input id="article_type" type="hidden" />
-          <input id="article_title" class="input" placeholder="標題（必填）" />
-          <textarea id="article_content" class="input" rows="6" placeholder="內容 / 心得"></textarea>
-          <input id="article_date" class="input" type="date" />
-          <input id="article_photos" class="input" placeholder="照片 URL（多個以逗號分隔，可選）" />
-          <div class="flex justify-end gap-2">
-            <button class="btn" onclick="saveArticle()">儲存</button>
-          </div>
-        </div>
+      <div>
+        <label class="block text-sm mb-1">圖片網址（可空白）</label>
+        <input id="share-image" class="w-full border rounded-xl px-3 py-2" />
       </div>
-    </div>
-  </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="share-cancel" class="btn">取消</button>
+        <button type="submit" class="btn btn-primary">送出</button>
+      </div>
+      <p id="share-result" class="text-sm mt-1"></p>
+    </form>
+  </dialog>
 
-  <!-- Lightbox -->
-  <div id="lightbox" class="hidden">
-    <div class="modal-backdrop" onclick="closeLightbox()">
-      <img id="lightboxImg" src="" alt="preview" class="max-h-[90vh] rounded-2xl shadow-2xl" onclick="event.stopPropagation()" />
-    </div>
-  </div>
+  <footer class="text-center text-xs text-slate-500 py-8">© <span id="year"></span> 救護義消看板平台</footer>
 
-<script>
-/* ============================
-   Data keys & helpers
-   ============================ */
-const LS = {
-  ATT: 'superemt_attendance_v1',
-  ALBUM: 'superemt_album_v1',      // array [{id,url,title}]
-  ALBUM_LINK: 'superemt_album_link_v1',
-  ALBUM_COVER_COUNT: 'superemt_album_cover_count_v1',
-  TRAINING: 'superemt_training_v1',
-  DUTY: 'superemt_duty_v1'
-};
-
-const uid = () => Math.random().toString(36).slice(2);
-const todayISO = () => new Date().toISOString().slice(0,10);
-const load = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch(e){ return fb; } };
-const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
-
-/* ============================
-   Calendar UI
-   ============================ */
-
-let calendarDate = new Date(); // current displayed month
-let selectedDate = todayISO();
-
-function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-
-function renderCalendar() {
-  const grid = document.getElementById('calendarGrid');
-  grid.innerHTML = '';
-
-  const year = calendarDate.getFullYear();
-  const month = calendarDate.getMonth();
-  const first = startOfMonth(calendarDate);
-  const last = endOfMonth(calendarDate);
-  const monthLabel = document.getElementById('monthLabel');
-  monthLabel.textContent = `${year} 年 ${month+1} 月`;
-
-  // week day headers
-  const weekdays = ['日','一','二','三','四','五','六'];
-  weekdays.forEach(w => {
-    const el = document.createElement('div');
-    el.className = 'text-center text-xs text-gray-500';
-    el.textContent = w;
-    grid.appendChild(el);
-  });
-
-  // blanks before first day
-  const startBlank = first.getDay();
-  for(let i=0;i<startBlank;i++){
-    const blank = document.createElement('div');
-    grid.appendChild(blank);
-  }
-
-  const daysInMonth = last.getDate();
-  const attendance = load(LS.ATT, []);
-
-  for(let d=1; d<=daysInMonth; d++){
-    const dateStr = new Date(year, month, d).toISOString().slice(0,10);
-    const cell = document.createElement('div');
-    cell.className = 'day-cell p-2 rounded-lg hover:bg-gray-50';
-    cell.dataset.date = dateStr;
-
-    // header with number and marker
-    const top = document.createElement('div');
-    top.className = 'flex items-center justify-between';
-    const num = document.createElement('div');
-    num.textContent = d;
-    num.className = 'text-sm font-medium';
-    top.appendChild(num);
-
-    const marker = document.createElement('div');
-    // check if any attendance present that day
-    const count = attendance.filter(a => a.date === dateStr).length;
-    if(count>0){
-      const dot = document.createElement('span');
-      dot.className = 'badge';
-      dot.textContent = count;
-      marker.appendChild(dot);
+  <!-- 匯出 Excel 的小工具：直接呼叫 API 拿資料、產 .xlsx（不依賴 app.js 的 state） -->
+  <script>
+    async function fetchConfigForExport(){
+      // 和 app.js 一樣避免快取
+      const ver = 'v=15';
+      const r = await fetch('config.json?'+ver);
+      return r.json();
     }
-    top.appendChild(marker);
+    function toAoa(headers, rows, pick){
+      const out = [headers];
+      rows.forEach(r=> out.push(pick(r)));
+      return out;
+    }
+    function downloadXlsx(wb, filename){
+      XLSX.writeFile(wb, filename);
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const cancelBtn = document.getElementById('share-cancel');
+      if(cancelBtn){
+        cancelBtn.addEventListener('click', ()=> document.getElementById('dlg-share').close());
+      }
+      document.getElementById('btn-export-xlsx')?.addEventListener('click', async ()=>{
+        try{
+          const cfg = await fetchConfigForExport();
+          const api = cfg.apiBase;
+          // 直接抓完整 bootstrap（含 events/attendance）
+          const res = await fetch(api + '?action=bootstrap');
+          const data = await res.json();
+          const events = data.events || [];
+          const attendance = data.attendance || [];
 
-    // append
-    cell.appendChild(top);
+          // 1) 依姓名+分隊 統計次數（排除 rejected）
+          const statMap = new Map();
+          attendance.forEach(a=>{
+            if(String(a.status||'').toLowerCase()==='rejected') return;
+            const key = `${a.name}｜${a.division||'未填分隊'}`;
+            statMap.set(key, (statMap.get(key)||0)+1);
+          });
+          const statRows = Array.from(statMap.entries())
+            .sort((a,b)=> b[1]-a[1])
+            .map(([k,c])=>{
+              const [name, division] = k.split('｜');
+              return {name, division, count:c};
+            });
 
-    // click: select date
-    cell.onclick = () => { selectedDate = dateStr; renderSelectedDay(); };
+          // 2) 原始明細（依時間排序）
+          const raw = attendance.slice().sort((a,b)=> String(a.timestamp||'').localeCompare(String(b.timestamp||'')));
 
-    // highlight selected
-    if(selectedDate === dateStr) cell.classList.add('ring-2','ring-sky-200');
+          // 3) 建立 Excel
+          const wb = XLSX.utils.book_new();
 
-    grid.appendChild(cell);
-  }
-}
-
-/* ============================
-   Selected day & attendance list
-   ============================ */
-
-function renderSelectedDay(){
-  document.getElementById('selectedDateLabel').textContent = selectedDate;
-  const listEl = document.getElementById('eventsList');
-  const noEl = document.getElementById('noEvents');
-  const arr = load(LS.ATT, []).filter(a => a.date === selectedDate);
-  listEl.innerHTML = '';
-  if(arr.length===0){ noEl.classList.remove('hidden'); } else { noEl.classList.add('hidden'); }
-  arr.forEach(item => {
-    const li = document.createElement('li');
-    li.className = 'p-2 border rounded-md flex items-center justify-between';
-    li.innerHTML = `<div><div class="font-medium">${escapeHtml(item.name)}</div><div class="text-xs text-gray-500">${item.note||''}</div></div>
-                    <div class="flex gap-2"><button class="btn" onclick="editAttendance('${item.id}')">編輯</button><button class="btn" onclick="deleteAttendance('${item.id}')">刪除</button></div>`;
-    listEl.appendChild(li);
-  });
-  renderAggregates();
-  renderCalendar();
-}
-
-/* ============================
-   Attendance CRUD
-   ============================ */
-
-let editingAttId = null;
-
-function openAttendanceModal(date){
-  document.getElementById('attendanceModal').classList.remove('hidden');
-  document.getElementById('att_date').value = date || selectedDate || todayISO();
-  document.getElementById('att_name').value = '';
-  document.getElementById('att_note').value = '';
-  editingAttId = null;
-}
-
-function closeAttendanceModal(){
-  document.getElementById('attendanceModal').classList.add('hidden');
-}
-
-function saveAttendance(){
-  const name = document.getElementById('att_name').value.trim();
-  const date = document.getElementById('att_date').value;
-  const note = document.getElementById('att_note').value.trim();
-  if(!name){ alert('請輸入姓名'); return; }
-  const arr = load(LS.ATT, []);
-  if(editingAttId){
-    const idx = arr.findIndex(a=>a.id===editingAttId);
-    if(idx>=0){ arr[idx].name=name; arr[idx].date=date; arr[idx].note=note; }
-  } else {
-    arr.push({ id: uid(), name, date: date || todayISO(), note });
-  }
-  save(LS.ATT, arr);
-  closeAttendanceModal();
-  selectedDate = date || selectedDate;
-  renderSelectedDay();
-  renderAttendanceTable();
-}
-
-function editAttendance(id){
-  const arr = load(LS.ATT, []);
-  const it = arr.find(a => a.id===id);
-  if(!it) return;
-  editingAttId = id;
-  document.getElementById('att_name').value = it.name;
-  document.getElementById('att_date').value = it.date;
-  document.getElementById('att_note').value = it.note || '';
-  document.getElementById('attendanceModal').classList.remove('hidden');
-}
-
-function deleteAttendance(id){
-  if(!confirm('確定刪除此出勤紀錄？')) return;
-  const arr = load(LS.ATT, []).filter(a => a.id !== id);
-  save(LS.ATT, arr);
-  renderSelectedDay();
-  renderAttendanceTable();
-}
-
-function clearAllConfirm(){
-  if(confirm('確定清空所有出勤資料？此動作無法復原')) {
-    save(LS.ATT, []);
-    renderSelectedDay();
-    renderAttendanceTable();
-  }
-}
-
-/* ============================
-   Attendance table (full list)
-   ============================ */
-
-function renderAttendanceTable(){
-  const tbody = document.getElementById('attendanceTbody');
-  const arr = load(LS.ATT, []);
-  tbody.innerHTML = '';
-  arr.sort((a,b) => (a.date||'').localeCompare(b.date||''));
-  arr.forEach(it => {
-    const tr = document.createElement('tr');
-    tr.className = 'border-b';
-    tr.innerHTML = `<td class="p-2">${escapeHtml(it.name)}</td>
-                    <td class="p-2">${it.date||''}</td>
-                    <td class="p-2">${escapeHtml(it.note||'')}</td>
-                    <td class="p-2 text-right"><button class="btn" onclick="editAttendance('${it.id}')">編輯</button> <button class="btn" onclick="deleteAttendance('${it.id}')">刪除</button></td>`;
-    tbody.appendChild(tr);
-  });
-  renderAggregates();
-}
-
-/* ============================
-   Aggregates & Excel export
-   ============================ */
-
-function renderAggregates(){
-  const arr = load(LS.ATT, []);
-  document.getElementById('totalCount').textContent = String(arr.length);
-  const names = Array.from(new Set(arr.map(a=>a.name).filter(Boolean)));
-  document.getElementById('rosterCount').textContent = String(names.length);
-  // top person
-  const counts = {};
-  arr.forEach(a => counts[a.name] = (counts[a.name]||0)+1);
-  let top = '—', topc = 0;
-  for(const [n,c] of Object.entries(counts)){ if(c>topc){ topc=c; top=n; } }
-  document.getElementById('topPerson').textContent = top === '—' ? '—' : `${top}（${topc}次）`;
-}
-
-function downloadExcel(){
-  const arr = load(LS.ATT, []);
-  const detail = arr.map(a => ({ 姓名: a.name, 日期: a.date, 備註: a.note || '' }));
-  // stats by name
-  const byName = {};
-  const byDate = {};
-  arr.forEach(a => {
-    byName[a.name] = (byName[a.name]||0) + 1;
-    byDate[a.date] = (byDate[a.date]||0) + 1;
-  });
-  const shtName = Object.entries(byName).map(([k,v]) => ({ 姓名: k, 次數: v }));
-  const shtDate = Object.entries(byDate).map(([k,v]) => ({ 日期: k, 次數: v }));
-
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.json_to_sheet(detail);
-  XLSX.utils.book_append_sheet(wb, ws1, 'Attendance');
-  const ws2 = XLSX.utils.json_to_sheet(shtName);
-  XLSX.utils.book_append_sheet(wb, ws2, 'Stats_ByName');
-  const ws3 = XLSX.utils.json_to_sheet(shtDate);
-  XLSX.utils.book_append_sheet(wb, ws3, 'Stats_ByDate');
-
-  const ym = new Date();
-  const fname = `出勤統計_${ym.getFullYear()}-${String(ym.getMonth()+1).padStart(2,'0')}.xlsx`;
-  XLSX.writeFile(wb, fname);
-}
-
-/* ============================
-   Album: manage & render
-   ============================ */
-
-function renderAlbum(){
-  const covers = load(LS.ALBUM, []);
-  const coverCount = Number(load(LS.ALBUM_COVER_COUNT, 3)) || 3;
-  const container = document.getElementById('albumCovers');
-  container.innerHTML = '';
-  if(covers.length === 0){
-    container.innerHTML = '<div class="text-sm text-gray-500">尚未設定相簿封面，請點「管理相簿」新增。</div>';
-  } else {
-    covers.slice(0, coverCount).forEach(it=>{
-      const col = document.createElement('div');
-      col.className = 'card p-3';
-      col.innerHTML = `<img src="${escapeAttr(it.url)}" alt="${escapeAttr(it.title||'')}" class="cover-img cursor-zoom-in" onclick="openLightbox('${escapeAttr(it.url)}')" />
-                       <div class="mt-2 text-sm text-gray-600">${escapeHtml(it.title||'')}</div>`;
-      container.appendChild(col);
-    });
-  }
-  // update link & coverCount input
-  document.getElementById('coverCount').value = String(coverCount);
-  document.getElementById('albumLink').value = load(LS.ALBUM_LINK, '');
-}
-
-function openAlbumModal(){
-  document.getElementById('albumModal').classList.remove('hidden');
-  renderAlbumManage();
-}
-
-function closeAlbumModal(){ document.getElementById('albumModal').classList.add('hidden'); }
-
-function addAlbumImage(){
-  const url = document.getElementById('album_img_url').value.trim();
-  const title = document.getElementById('album_img_title').value.trim();
-  if(!url){ alert('請貼上圖片 URL（需為可公開存取）'); return; }
-  const arr = load(LS.ALBUM, []);
-  arr.unshift({ id: uid(), url, title });
-  save(LS.ALBUM, arr);
-  document.getElementById('album_img_url').value = '';
-  document.getElementById('album_img_title').value = '';
-  renderAlbumManage();
-  renderAlbum();
-}
-
-function removeAlbumImage(id){
-  if(!confirm('確定刪除此照片？')) return;
-  const arr = load(LS.ALBUM, []).filter(i => i.id !== id);
-  save(LS.ALBUM, arr);
-  renderAlbumManage(); renderAlbum();
-}
-
-function renderAlbumManage(){
-  const list = load(LS.ALBUM, []);
-  const el = document.getElementById('albumManageList');
-  el.innerHTML = '';
-  if(list.length===0){
-    el.innerHTML = '<div class="text-sm text-gray-500">尚無照片。</div>'; return;
-  }
-  list.forEach(it=>{
-    const card = document.createElement('div');
-    card.className = 'p-3 border rounded-lg flex items-center gap-3';
-    card.innerHTML = `<img src="${escapeAttr(it.url)}" class="w-28 h-20 object-cover rounded-md" />
-                      <div class="flex-1"><div class="font-medium text-sm">${escapeHtml(it.title||'')}</div><div class="text-xs text-gray-500 break-all">${escapeHtml(it.url)}</div></div>
-                      <div class="flex flex-col gap-2"><button class="btn" onclick="removeAlbumImage('${it.id}')">刪除</button></div>`;
-    el.appendChild(card);
-  });
-}
-
-function saveAlbumSettings(){
-  const link = document.getElementById('albumLink').value.trim();
-  let count = Number(document.getElementById('coverCount').value) || 3;
-  if(count < 1) count = 1; if(count > 12) count = 12;
-  save(LS.ALBUM_LINK, link);
-  save(LS.ALBUM_COVER_COUNT, count);
-  alert('相簿設定已儲存');
-  renderAlbum();
-}
-
-/* ============================
-   Lightbox
-   ============================ */
-function openLightbox(url){
-  const lb = document.getElementById('lightbox');
-  document.getElementById('lightboxImg').src = url;
-  lb.classList.remove('hidden');
-}
-function closeLightbox(){ document.getElementById('lightbox').classList.add('hidden'); }
-
-/* ============================
-   Shares (training / duty)
-   ============================ */
-
-function renderShares(){
-  const trainings = load(LS.TRAINING, []);
-  const duties = load(LS.DUTY, []);
-  const tEl = document.getElementById('trainingList');
-  const dEl = document.getElementById('dutyList');
-  tEl.innerHTML = ''; dEl.innerHTML = '';
-  if(trainings.length===0) document.getElementById('trainingEmpty').classList.remove('hidden'); else document.getElementById('trainingEmpty').classList.add('hidden');
-  if(duties.length===0) document.getElementById('dutyEmpty').classList.remove('hidden'); else document.getElementById('dutyEmpty').classList.add('hidden');
-
-  trainings.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-  duties.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-
-  trainings.forEach(it => {
-    const card = document.createElement('div');
-    card.className = 'p-3 border rounded-md';
-    card.innerHTML = `<div class="flex items-start justify-between"><div><div class="font-medium">${escapeHtml(it.title)}</div><div class="text-xs text-gray-500">${it.date||''}</div></div>
-                      <div class="flex gap-2"><button class="btn" onclick="openArticleView('training','${it.id}')">觀看</button><button class="btn" onclick="editArticle('training','${it.id}')">編輯</button><button class="btn" onclick="deleteArticle('training','${it.id}')">刪除</button></div></div>
-                      <div class="text-sm text-gray-700 mt-2">${escapeHtml(truncate(it.content,200))}</div>`;
-    tEl.appendChild(card);
-  });
-
-  duties.forEach(it => {
-    const card = document.createElement('div');
-    card.className = 'p-3 border rounded-md';
-    card.innerHTML = `<div class="flex items-start justify-between"><div><div class="font-medium">${escapeHtml(it.title)}</div><div class="text-xs text-gray-500">${it.date||''}</div></div>
-                      <div class="flex gap-2"><button class="btn" onclick="openArticleView('duty','${it.id}')">觀看</button><button class="btn" onclick="editArticle('duty','${it.id}')">編輯</button><button class="btn" onclick="deleteArticle('duty','${it.id}')">刪除</button></div></div>
-                      <div class="text-sm text-gray-700 mt-2">${escapeHtml(truncate(it.content,200))}</div>`;
-    dEl.appendChild(card);
-  });
-}
-
-function openArticleModal(type){
-  document.getElementById('articleModal').classList.remove('hidden');
-  document.getElementById('article_type').value = type;
-  document.getElementById('article_title').value = '';
-  document.getElementById('article_content').value = '';
-  document.getElementById('article_date').value = todayISO();
-  document.getElementById('article_photos').value = '';
-  document.getElementById('articleModalTitle').textContent = type === 'training' ? '新增教育訓練分享' : '新增協勤經歷分享';
-  editingArticleId = null;
-}
-
-function closeArticleModal(){ document.getElementById('articleModal').classList.add('hidden'); }
-
-let editingArticleId = null;
-
-function saveArticle(){
-  const type = document.getElementById('article_type').value;
-  const title = document.getElementById('article_title').value.trim();
-  const content = document.getElementById('article_content').value.trim();
-  const date = document.getElementById('article_date').value || todayISO();
-  const photos = document.getElementById('article_photos').value.trim() ? document.getElementById('article_photos').value.split(',').map(s=>s.trim()).filter(Boolean) : [];
-  if(!title){ alert('請輸入標題'); return; }
-  const key = type === 'training' ? LS.TRAINING : LS.DUTY;
-  const arr = load(key, []);
-  if(editingArticleId){
-    const idx = arr.findIndex(a=>a.id===editingArticleId);
-    if(idx>=0){ arr[idx] = {...arr[idx], title, content, date, photos}; }
-  } else {
-    arr.unshift({ id: uid(), title, content, date, photos });
-  }
-  save(key, arr);
-  closeArticleModal();
-  renderShares();
-}
-
-function editArticle(type,id){
-  const key = type === 'training' ? LS.TRAINING : LS.DUTY;
-  const arr = load(key, []);
-  const it = arr.find(a=>a.id===id);
-  if(!it) return;
-  editingArticleId = id;
-  document.getElementById('article_type').value = type;
-  document.getElementById('articleModal').classList.remove('hidden');
-  document.getElementById('articleModalTitle').textContent = type === 'training' ? '編輯教育訓練分享' : '編輯協勤經歷分享';
-  document.getElementById('article_title').value = it.title;
-  document.getElementById('article_content').value = it.content;
-  document.getElementById('article_date').value = it.date || todayISO();
-  document.getElementById('article_photos').value = (it.photos||[]).join(',');
-}
-
-function deleteArticle(type,id){
-  if(!confirm('確定刪除此分享？')) return;
-  const key = type === 'training' ? LS.TRAINING : LS.DUTY;
-  const arr = load(key, []).filter(a=>a.id!==id);
-  save(key, arr);
-  renderShares();
-}
-
-function openArticleView(type,id){
-  const key = type === 'training' ? LS.TRAINING : LS.DUTY;
-  const arr = load(key, []);
-  const it = arr.find(a=>a.id===id);
-  if(!it) return;
-  // show a simple modal-like overlay
-  const html = document.createElement('div');
-  html.className = 'modal-backdrop';
-  html.onclick = () => document.body.removeChild(html);
-  const inner = document.createElement('div');
-  inner.className = 'card max-w-2xl w-full p-4';
-  inner.onclick = e=>e.stopPropagation();
-  inner.innerHTML = `<div class="flex items-center justify-between mb-3"><div class="text-lg font-semibold">${escapeHtml(it.title)}</div><button class="btn">關閉</button></div>
-                     <div class="text-xs text-gray-500 mb-3">${it.date||''}</div>
-                     <div class="prose text-sm">${escapeHtml(it.content).replaceAll('\\n','<br/>')}</div>`;
-  inner.querySelector('button').onclick = () => document.body.removeChild(html);
-  html.appendChild(inner);
-  document.body.appendChild(html);
-}
-
-/* ============================
-   Utils
-   ============================ */
-
-function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-function escapeAttr(s=''){ return String(s).replace(/"/g,'&quot;'); }
-function truncate(s,l=100){ if(!s) return ''; return s.length>l? s.slice(0,l)+'...':s; }
-
-/* ============================
-   Init & event wiring
-   ============================ */
-
-document.getElementById('year').textContent = new Date().getFullYear();
-
-document.getElementById('prevMonthBtn').onclick = () => { calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth()-1, 1); renderCalendar(); };
-document.getElementById('nextMonthBtn').onclick = () => { calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth()+1, 1); renderCalendar(); };
-
-document.getElementById('calendarGrid').addEventListener('click', (e)=>{
-  // clicking empty space handled by cell onclick; nothing extra here
-});
-
-// Make clicking outside modals close them is handled inline with onclick on backdrop elements.
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  // default seed (if empty) - optional example data
-  if(!localStorage.getItem(LS.ALBUM)){
-    save(LS.ALBUM, [
-      { id: uid(), url: 'https://images.unsplash.com/photo-1558980664-10b3155f0f38?q=80&w=1600&auto=format&fit=crop', title:'CPR 訓練' },
-      { id: uid(), url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1600&auto=format&fit=crop', title:'場站演練' }
-    ]);
-  }
-  if(!localStorage.getItem(LS.ATT)) save(LS.ATT, []);
-  if(!localStorage.getItem(LS.TRAINING)) save(LS.TRAINING, []);
-  if(!localStorage.getItem(LS.DUTY)) save(LS.DUTY, []);
-  if(!localStorage.getItem(LS.ALBUM_COVER_COUNT)) save(LS.ALBUM_COVER_COUNT, 3);
-
-  // wire album link field initial value
-  document.getElementById('albumLink').value = load(LS.ALBUM_LINK, '');
-
-  // calendar & lists
-  renderCalendar();
-  renderSelectedDay();
-  renderAttendanceTable();
-  renderAlbum();
-  renderShares();
-});
-
-/* ============================
-   Small UX helpers to bind modal open from buttons in code context
-   ============================ */
-function openAttendanceModalFromBtn(){
-  openAttendanceModal();
-}
-window.openAttendanceModal = openAttendanceModal;
-window.closeAttendanceModal = closeAttendanceModal;
-window.saveAttendance = saveAttendance;
-window.openAlbumModal = openAlbumModal;
-window.closeAlbumModal = closeAlbumModal;
-window.addAlbumImage = addAlbumImage;
-window.openLightbox = openLightbox;
-window.closeLightbox = closeLightbox;
-window.openArticleModal = openArticleModal;
-window.closeArticleModal = closeArticleModal;
-window.saveArticle = saveArticle;
-window.editAttendance = editAttendance;
-window.deleteAttendance = deleteAttendance;
-window.downloadExcel = downloadExcel;
-window.clearAllConfirm = clearAllConfirm;
-window.renderSelectedDay = renderSelectedDay;
-window.renderAttendanceTable = renderAttendanceTable;
-window.renderAlbum = renderAlbum;
-window.saveAlbumSettings = saveAlbumSettings;
-window.editArticle = editArticle;
-window.deleteArticle = deleteArticle;
-window.openArticleView = openArticleView;
-</script>
-</body>
-</html>
+          const statSheet = XLSX.utils.aoa_to_sheet(
