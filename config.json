@@ -1,7 +1,7 @@
 {
   "apiBase": "https://script.google.com/macros/s/AKfycbyEVtW_mbnjGeZQ6Sysi5i5iw38h-uNCa4mYDXdnxGbFntOIyJiDZQn5LXjBvjd0W3Aiw/exec",
   "calendarEmbed": "https://calendar.google.com/calendar/embed?src=1b934187b542a739c0faed74834f8175288bb33c0d1ca25f5b4a5cf1104c728d%40group.calendar.google.com&ctz=Asia%2FTaipei",
-  "calendarPublicUrl": "",
+  "calendarPublicUrl": "https://calendar.google.com/calendar/u/0?cid=1b934187b542a739c0faed74834f8175288bb33c0d1ca25f5b4a5cf1104c728d@group.calendar.google.com",
   "divisions": [
     "第一大隊：苗栗分隊","第一大隊：頭屋分隊","第一大隊：公館分隊","第一大隊：銅鑼分隊","第一大隊：三義分隊",
     "第二大隊：竹南分隊","第二大隊：後龍分隊","第二大隊：造橋分隊",
