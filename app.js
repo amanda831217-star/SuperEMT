@@ -3,7 +3,7 @@ const state = { config:null, events:[], attendance:[], trainings:[], experiences
 function $(id){ return document.getElementById(id); }
 
 async function loadConfig(){
-  const ver = 'v=7'; // 每次出新版本就改這個數字
+  const ver = 'v=16'; // 每次出新版本就改這個數字
   const r1 = await fetch('config.json?' + ver).catch(()=>null);
   if(r1 && r1.ok) return r1.json();
   const r2 = await fetch('config.sample.json?' + ver);
