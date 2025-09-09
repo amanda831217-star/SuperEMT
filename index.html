@@ -1,143 +1,547 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>救護義消看板平台</title>
-  <link rel="icon" href="assets/favicon.png" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SuperEMT | 義消救護隊</title>
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    html{scroll-behavior:smooth}
-    .card{border-radius:1rem;box-shadow:0 6px 24px rgba(15,23,42,.08);padding:1.25rem;background:rgba(255,255,255,.96)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:.5rem 1rem;border-radius:.75rem;border:1px solid #CBD5E1;transition:.2s}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.12)}
-    .btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}
-    .grid-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-    .chip{display:inline-block;font-size:.75rem;padding:.125rem .5rem;border-radius:9999px;background:#eef2ff;color:#3730a3}
-    .anchor{scroll-margin-top:84px}
-    .topnav a{border:1px solid #CBD5E1;border-radius:.75rem;padding:.5rem .9rem;background:#fff}
-    .topnav a:hover{background:#f8fafc}
+    :root { --ring: #0ea5e9; }
+    html, body { font-family: 'Noto Sans TC', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    .card { @apply bg-white rounded-3xl shadow-sm border border-gray-200; }
+    .btn { @apply inline-flex items-center gap-2 rounded-2xl px-4 py-2 border border-gray-200 shadow-sm hover:shadow-md active:scale-95 transition; }
+    .input { @apply w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2; box-shadow: 0 0 0 0 transparent; }
+    .input:focus { box-shadow: 0 0 0 2px var(--ring) inset; }
+    .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200; }
+    .cover-img { @apply w-full h-64 object-cover rounded-2xl; }
+    .grid-auto-fill { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 1rem; }
+    .modal-backdrop { @apply fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800">
-  <header class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-      <img src="assets/logo.png" class="w-8 h-8" alt="logo"/>
-      <div class="mr-auto">
-        <h1 class="text-xl font-bold">救護義消看板平台</h1>
-        <p class="text-xs text-slate-600">活動排程・出席統計・相簿・教育訓練・協勤經歷・管理</p>
+<body class="bg-gray-50 text-gray-800">
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🚑</span>
+        <h1 class="text-xl md:text-2xl font-bold">SuperEMT 義消救護隊</h1>
       </div>
-      <nav class="topnav hidden md:flex gap-2">
-        <a href="#schedule">行事曆</a>
-        <a href="#stats">統計</a>
-        <a href="#gallery">相簿</a>
-        <a href="#training">教育訓練</a>
-        <a href="#experience">協勤經歷</a>
-        <a href="#admin">管理</a>
+      <nav class="hidden md:flex gap-4 text-sm">
+        <a href="#training" class="hover:text-sky-600">教育訓練分享</a>
+        <a href="#duty" class="hover:text-sky-600">協勤經歷分享</a>
+        <a href="#album" class="hover:text-sky-600">活動相簿</a>
+        <a href="#attendance" class="hover:text-sky-600">本月出勤統計</a>
       </nav>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 pb-24 space-y-8 mt-4">
-
-    <!-- 活動排程 -->
-    <section id="schedule" class="anchor card">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-semibold">📅 活動排程</h2>
-        <div class="text-sm text-slate-500">由幹部編輯試算表 <span class="chip">免登入瀏覽 / 免註冊報名</span></div>
+  <main class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-8">
+    <!-- 教育訓練分享 -->
+    <section id="training" class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-semibold">教育訓練分享</h2>
+        <button class="btn" onclick="openArticleModal('training')">新增分享</button>
       </div>
-      <div id="calendar-embed" class="w-full aspect-video bg-white rounded-xl overflow-hidden mb-4"></div>
-      <div id="event-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-      <div id="no-events" class="hidden text-center text-slate-500 py-8">目前沒有即將舉辦的活動</div>
+      <div id="trainingList" class="grid-auto-fill"></div>
+      <p id="trainingEmpty" class="text-center text-gray-500 py-6 hidden">目前尚無內容，點右上角「新增分享」。</p>
     </section>
 
-    <!-- 出席統計 -->
-    <section id="stats" class="anchor card">
-      <h2 class="text-xl font-semibold mb-4">📊 出席統計（含分隊）</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="card">
-          <h3 class="font-semibold mb-2">本月出勤 Top 10</h3>
-          <ol id="top-attendees" class="list-decimal pl-6 space-y-1 text-sm"></ol>
-        </div>
-        <div class="card">
-          <h3 class="font-semibold mb-2">每場活動出席人數</h3>
-          <ul id="per-event-counts" class="space-y-1 text-sm"></ul>
-        </div>
+    <!-- 協勤經歷分享 -->
+    <section id="duty" class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-semibold">協勤經歷分享</h2>
+        <button class="btn" onclick="openArticleModal('duty')">新增分享</button>
       </div>
+      <div id="dutyList" class="grid-auto-fill"></div>
+      <p id="dutyEmpty" class="text-center text-gray-500 py-6 hidden">目前尚無內容，點右上角「新增分享」。</p>
     </section>
 
-    <!-- 活動相簿 -->
-    <section id="gallery" class="anchor card">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-semibold">📷 活動相簿</h2>
-        <div class="text-xs text-slate-500">相簿連結</div>
-      </div>
-      <div id="album-list" class="grid-gallery"></div>
-    </section>
-
-    <!-- 教育訓練 -->
-    <section id="training" class="anchor card">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-semibold">🎓 教育訓練分享</h2>
-        <button class="btn" id="btn-add-training">＋ 分享一篇</button>
-      </div>
-      <div id="training-list" class="space-y-3"></div>
-      <div id="training-empty" class="text-sm text-slate-500">尚無文章</div>
-    </section>
-
-    <!-- 協勤經歷 -->
-    <section id="experience" class="anchor card">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-xl font-semibold">📝 協勤經歷分享</h2>
-        <button class="btn" id="btn-add-exp">＋ 新增分享</button>
-      </div>
-      <div id="exp-list" class="space-y-3"></div>
-      <div id="exp-empty" class="text-sm text-slate-500">尚無分享</div>
-    </section>
-
-    <!-- 管理（幹部） -->
-    <section id="admin" class="anchor card">
-      <h2 class="text-xl font-semibold mb-4">🛠 管理（幹部用）</h2>
-      <div class="flex items-end gap-2 mb-4">
+    <!-- 活動相簿（封面大圖 + 連結雲端相簿） -->
+    <section id="album" class="card p-6">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
         <div>
-          <label class="block text-xs">管理 PIN（若有設定）</label>
-          <input id="admin-pin" class="border rounded-lg px-3 py-2" placeholder="輸入 PIN" />
+          <h2 class="text-2xl font-semibold">活動相簿</h2>
+          <p class="text-gray-500 text-sm">下方直接顯示封面大圖；點擊可放大預覽或前往雲端相簿查看更多。</p>
         </div>
-        <button class="btn btn-primary" id="btn-load-pending">載入待處理</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <h3 class="font-semibold mb-2">出席待確認</h3>
-          <div id="pending-list" class="space-y-2"></div>
-        </div>
-        <div>
-          <h3 class="font-semibold mb-2">文章待審核</h3>
-          <div id="pending-posts" class="space-y-2"></div>
+        <div class="flex flex-wrap gap-2">
+          <input id="albumLink" class="input md:w-96" type="url" placeholder="雲端相簿連結（Google Photos / Drive）" />
+          <input id="albumCoverCount" class="input w-28" type="number" min="1" max="12" placeholder="封面數" />
+          <button class="btn" onclick="saveAlbumSettings()">儲存設定</button>
+          <button class="btn" onclick="openAlbumModal()">管理封面照片</button>
         </div>
       </div>
-      <p class="text-xs text-slate-500 mt-3">也可直接在試算表修改 Attendance/Trainings/Experiences 的 status。</p>
+
+      <!-- 封面大圖區 -->
+      <div id="albumCovers" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"></div>
+      <p id="albumEmpty" class="text-center text-gray-500 py-6 hidden">尚未設定封面照片，請點「管理封面照片」。</p>
+
+      <div class="mt-4 flex justify-end">
+        <a id="albumLinkBtn" class="btn" target="_blank">前往雲端相簿 ➜</a>
+      </div>
+    </section>
+
+    <!-- 本月出勤統計 -->
+    <section id="attendance" class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-semibold">本月出勤統計</h2>
+        <div class="flex gap-2">
+          <button class="btn" onclick="downloadExcel()">下載 Excel</button>
+          <button class="btn" onclick="clearAttendanceConfirm()">清空本月資料</button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-3 mb-4">
+        <input id="attName" class="input" type="text" placeholder="姓名（必填）" />
+        <input id="attDate" class="input" type="date" />
+        <input id="attNote" class="input" type="text" placeholder="備註（值勤別/班別等）" />
+        <button class="btn" onclick="addAttendance()">新增出勤紀錄</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b bg-gray-50">
+              <th class="text-left p-2">姓名</th>
+              <th class="text-left p-2">日期</th>
+              <th class="text-left p-2">備註</th>
+              <th class="text-right p-2">操作</th>
+            </tr>
+          </thead>
+          <tbody id="attTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 grid md:grid-cols-3 gap-4">
+        <div class="card p-4">
+          <div class="text-sm text-gray-500">本月總出勤筆數</div>
+          <div id="attTotal" class="text-2xl font-bold">0</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-sm text-gray-500">人員名冊（去重）</div>
+          <div id="attRoster" class="text-2xl font-bold">0</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-sm text-gray-500">最常出勤（Top 1）</div>
+          <div id="attTop" class="text-lg font-semibold">—</div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- 報名 Modal -->
-  <div id="join-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-      <h3 class="text-lg font-semibold mb-2">報名參加</h3>
-      <p id="join-event-title" class="text-sm text-slate-600 mb-4"></p>
-      <form id="join-form" class="space-y-3">
-        <input type="hidden" id="jf-event-id" />
-        <div><label class="block text-sm mb-1">姓名</label><input class="w-full border rounded-xl px-3 py-2" id="jf-name" required /></div>
-        <div><label class="block text-sm mb-1">分隊</label><select id="jf-division" class="w-full border rounded-xl px-3 py-2"></select></div>
-        <div class="flex items-center gap-2"><input type="checkbox" id="jf-confirm" class="h-4 w-4" required /><label for="jf-confirm" class="text-sm">我確定會出席</label></div>
-        <div class="flex justify-end gap-2 pt-2"><button type="button" id="jf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div>
-      </form>
-      <p id="jf-result" class="text-sm mt-3"></p>
+  <!-- ===== Modals ===== -->
+  <!-- 新增/編輯 文章 -->
+  <div id="articleModal" class="hidden modal-backdrop">
+    <div class="card w-full max-w-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 id="articleModalTitle" class="text-xl font-semibold">新增分享</h3>
+        <button class="btn" onclick="closeArticleModal()">關閉</button>
+      </div>
+      <div class="grid gap-3">
+        <input id="articleTitle" class="input" placeholder="標題（必填）" />
+        <textarea id="articleContent" class="input" rows="6" placeholder="內文（可貼上簡短心得或連結）"></textarea>
+        <div class="grid md:grid-cols-2 gap-3">
+          <input id="articleDate" class="input" type="date" />
+          <input id="articlePhotos" class="input" placeholder="照片 URL（多張以逗號分隔，可空）" />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button class="btn" onclick="saveArticle()">儲存</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <footer class="text-center text-xs text-slate-500 py-8">© <span id="year"></span> 救護義消看板平台</footer>
+  <!-- 管理相簿封面 -->
+  <div id="albumModal" class="hidden modal-backdrop">
+    <div class="card w-full max-w-3xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xl font-semibold">管理封面照片</h3>
+        <button class="btn" onclick="closeAlbumModal()">關閉</button>
+      </div>
+      <div class="grid md:grid-cols-3 gap-3 mb-3">
+        <input id="albumImgUrl" class="input" placeholder="貼上圖片網址（jpg/png）" />
+        <input id="albumImgTitle" class="input" placeholder="照片說明（選填）" />
+        <button class="btn" onclick="addAlbumImage()">新增封面</button>
+      </div>
 
-  <!-- 注意：已移除 QRCode 套件 -->
-  <script src="app.js?v=12"></script>
+      <div id="albumManageList" class="grid-auto-fill"></div>
+      <p id="albumManageEmpty" class="text-center text-gray-500 py-6 hidden">尚無封面，請先新增。</p>
+    </div>
+  </div>
+
+  <!-- 圖片放大預覽 -->
+  <div id="lightbox" class="hidden modal-backdrop" onclick="closeLightbox()">
+    <img id="lightboxImg" alt="preview" class="max-h-[90vh] rounded-2xl shadow-2xl" />
+  </div>
+
+  <footer class="text-center text-xs text-gray-500 py-8">
+    © <span id="year"></span> SuperEMT. All rights reserved.
+  </footer>
+
+  <script>
+    // ===== LocalStorage Keys =====
+    const LS = {
+      TRAINING: 'ak_training_articles',
+      DUTY: 'ak_duty_articles',
+      ALBUM: 'ak_album_images', // [{url, title, id}]
+      ALBUM_LINK: 'ak_album_link',
+      ALBUM_COVER_COUNT: 'ak_album_cover_count',
+      ATT: 'ak_attendance', // [{id, name, date, note}]
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const todayStr = () => new Date().toISOString().slice(0,10);
+    const uid = () => Math.random().toString(36).slice(2);
+
+    const loadJSON = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
+    const saveJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    // ===== 文章（教育訓練 / 協勤） =====
+    let currentArticleType = 'training'; // 'training' | 'duty'
+    let editingArticleId = null;
+
+    function renderArticleList(type) {
+      const listEl = type === 'training' ? $('trainingList') : $('dutyList');
+      const emptyEl = type === 'training' ? $('trainingEmpty') : $('dutyEmpty');
+      const data = loadJSON(type === 'training' ? LS.TRAINING : LS.DUTY, []);
+
+      listEl.innerHTML = '';
+      if (!data.length) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      data.sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card p-4 flex flex-col gap-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-start justify-between gap-3';
+        const title = document.createElement('div');
+        title.innerHTML = `<div class="text-lg font-semibold">${escapeHtml(item.title)}</div>
+                           <div class="text-xs text-gray-500 mt-0.5">${item.date || ''}</div>`;
+        const actions = document.createElement('div');
+        actions.className = 'flex gap-2';
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'btn';
+        btnEdit.textContent = '編輯';
+        btnEdit.onclick = () => openArticleModal(type, item.id);
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn';
+        btnDel.textContent = '刪除';
+        btnDel.onclick = () => deleteArticle(type, item.id);
+        actions.append(btnEdit, btnDel);
+        header.append(title, actions);
+
+        const content = document.createElement('div');
+        content.className = 'text-sm leading-7 whitespace-pre-wrap';
+        content.textContent = item.content || '';
+
+        card.append(header, content);
+
+        if (item.photos && item.photos.length) {
+          const grid = document.createElement('div');
+          grid.className = 'grid grid-cols-2 md:grid-cols-3 gap-3';
+          item.photos.forEach(src => {
+            const img = document.createElement('img');
+            img.src = src; img.alt = 'photo';
+            img.className = 'w-full h-40 object-cover rounded-xl cursor-zoom-in';
+            img.onclick = () => openLightbox(src);
+            grid.append(img);
+          });
+          card.append(grid);
+        }
+
+        listEl.append(card);
+      });
+    }
+
+    function openArticleModal(type, id=null) {
+      currentArticleType = type;
+      editingArticleId = id;
+      $('articleModal').classList.remove('hidden');
+      $('articleModalTitle').textContent = id ? '編輯分享' : '新增分享';
+      // 填入資料（或預設）
+      if (id) {
+        const data = loadJSON(type === 'training' ? LS.TRAINING : LS.DUTY, []);
+        const it = data.find(x => x.id === id);
+        $('articleTitle').value = it?.title || '';
+        $('articleContent').value = it?.content || '';
+        $('articleDate').value = it?.date || todayStr();
+        $('articlePhotos').value = (it?.photos || []).join(',');
+      } else {
+        $('articleTitle').value = '';
+        $('articleContent').value = '';
+        $('articleDate').value = todayStr();
+        $('articlePhotos').value = '';
+      }
+    }
+
+    function closeArticleModal() { $('articleModal').classList.add('hidden'); }
+
+    function saveArticle() {
+      const title = $('articleTitle').value.trim();
+      const content = $('articleContent').value.trim();
+      const date = $('articleDate').value;
+      const photos = $('articlePhotos').value.trim()
+        ? $('articlePhotos').value.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+      if (!title) { alert('請輸入標題'); return; }
+
+      const key = currentArticleType === 'training' ? LS.TRAINING : LS.DUTY;
+      const list = loadJSON(key, []);
+
+      if (editingArticleId) {
+        const idx = list.findIndex(x => x.id === editingArticleId);
+        if (idx >= 0) list[idx] = { ...list[idx], title, content, date, photos };
+      } else {
+        list.push({ id: uid(), title, content, date, photos });
+      }
+      saveJSON(key, list);
+      closeArticleModal();
+      renderArticleList(currentArticleType);
+    }
+
+    function deleteArticle(type, id) {
+      if (!confirm('確定刪除此分享？')) return;
+      const key = type === 'training' ? LS.TRAINING : LS.DUTY;
+      const list = loadJSON(key, []);
+      const newList = list.filter(x => x.id !== id);
+      saveJSON(key, newList);
+      renderArticleList(type);
+    }
+
+    // ===== 相簿 =====
+    function renderAlbum() {
+      const coverCount = Number(loadJSON(LS.ALBUM_COVER_COUNT, 6)) || 6;
+      $('albumCoverCount').value = coverCount;
+      const albumLink = loadJSON(LS.ALBUM_LINK, '');
+      $('albumLink').value = albumLink;
+      const arr = loadJSON(LS.ALBUM, []);
+
+      const wrap = $('albumCovers');
+      wrap.innerHTML = '';
+
+      if (!arr.length) {
+        $('albumEmpty').classList.remove('hidden');
+      } else {
+        $('albumEmpty').classList.add('hidden');
+        arr.slice(0, coverCount).forEach(it => {
+          const card = document.createElement('div');
+          card.className = 'card p-2';
+          const img = document.createElement('img');
+          img.src = it.url; img.alt = it.title || 'album';
+          img.className = 'cover-img cursor-zoom-in';
+          img.onclick = () => openLightbox(it.url);
+          const cap = document.createElement('div');
+          cap.className = 'text-sm text-gray-600 p-2';
+          cap.textContent = it.title || '';
+          card.append(img, cap);
+          wrap.append(card);
+        });
+      }
+
+      const linkBtn = $('albumLinkBtn');
+      linkBtn.href = albumLink || '#';
+      linkBtn.classList.toggle('pointer-events-none', !albumLink);
+      linkBtn.classList.toggle('opacity-50', !albumLink);
+    }
+
+    function openAlbumModal() {
+      $('albumModal').classList.remove('hidden');
+      renderAlbumManage();
+    }
+    function closeAlbumModal() { $('albumModal').classList.add('hidden'); }
+
+    function renderAlbumManage() {
+      const listEl = $('albumManageList');
+      const emptyEl = $('albumManageEmpty');
+      const arr = loadJSON(LS.ALBUM, []);
+      listEl.innerHTML = '';
+      if (!arr.length) { emptyEl.classList.remove('hidden'); return; }
+      emptyEl.classList.add('hidden');
+
+      arr.forEach(it => {
+        const item = document.createElement('div');
+        item.className = 'card p-3 flex gap-3';
+        item.innerHTML = `
+          <img src="${it.url}" alt="" class="w-28 h-20 object-cover rounded-xl" />
+          <div class="flex-1">
+            <div class="font-medium">${escapeHtml(it.title || '')}</div>
+            <div class="text-xs text-gray-500 break-all">${escapeHtml(it.url)}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn" onclick="removeAlbumImage('${it.id}')">刪除</button>
+          </div>
+        `;
+        listEl.append(item);
+      });
+    }
+
+    function addAlbumImage() {
+      const url = $('albumImgUrl').value.trim();
+      const title = $('albumImgTitle').value.trim();
+      if (!url) { alert('請貼上圖片網址'); return; }
+      const arr = loadJSON(LS.ALBUM, []);
+      arr.unshift({ id: uid(), url, title });
+      saveJSON(LS.ALBUM, arr);
+      $('albumImgUrl').value = '';
+      $('albumImgTitle').value = '';
+      renderAlbumManage();
+      renderAlbum();
+    }
+
+    function removeAlbumImage(id) {
+      const arr = loadJSON(LS.ALBUM, []);
+      saveJSON(LS.ALBUM, arr.filter(x => x.id !== id));
+      renderAlbumManage();
+      renderAlbum();
+    }
+
+    function saveAlbumSettings() {
+      const link = $('albumLink').value.trim();
+      const count = Math.max(1, Math.min(12, Number($('albumCoverCount').value || 6)));
+      saveJSON(LS.ALBUM_LINK, link);
+      saveJSON(LS.ALBUM_COVER_COUNT, count);
+      renderAlbum();
+      alert('相簿設定已儲存');
+    }
+
+    // ===== 圖片預覽 =====
+    function openLightbox(src) {
+      $('lightboxImg').src = src; $('lightbox').classList.remove('hidden');
+    }
+    function closeLightbox() { $('lightbox').classList.add('hidden'); }
+
+    // ===== 出勤 =====
+    function renderAttendance() {
+      const tbody = $('attTbody');
+      const list = loadJSON(LS.ATT, []);
+      tbody.innerHTML = '';
+
+      list.sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+
+      list.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="p-2">${escapeHtml(it.name)}</td>
+          <td class="p-2">${it.date || ''}</td>
+          <td class="p-2">${escapeHtml(it.note || '')}</td>
+          <td class="p-2 text-right">
+            <button class="btn" onclick="deleteAttendance('${it.id}')">刪除</button>
+          </td>
+        `;
+        tbody.append(tr);
+      });
+
+      // 總數
+      $('attTotal').textContent = String(list.length);
+      // 名冊
+      const names = Array.from(new Set(list.map(x => x.name).filter(Boolean)));
+      $('attRoster').textContent = String(names.length);
+      // Top 出勤
+      const counts = {};
+      list.forEach(x => { counts[x.name] = (counts[x.name]||0) + 1; });
+      let topName = '—', topCount = 0;
+      Object.entries(counts).forEach(([n,c]) => { if (c > topCount) { topCount = c; topName = n; } });
+      $('attTop').textContent = topName === '—' ? '—' : `${topName}（${topCount}次）`;
+    }
+
+    function addAttendance() {
+      const name = $('attName').value.trim();
+      const date = $('attDate').value || todayStr();
+      const note = $('attNote').value.trim();
+      if (!name) { alert('請輸入姓名'); return; }
+      const list = loadJSON(LS.ATT, []);
+      list.push({ id: uid(), name, date, note });
+      saveJSON(LS.ATT, list);
+      $('attName').value = '';
+      $('attNote').value = '';
+      renderAttendance();
+    }
+
+    function deleteAttendance(id) {
+      const list = loadJSON(LS.ATT, []);
+      saveJSON(LS.ATT, list.filter(x => x.id !== id));
+      renderAttendance();
+    }
+
+    function clearAttendanceConfirm() {
+      if (!confirm('確定清空本月出勤資料？此動作無法復原。')) return;
+      saveJSON(LS.ATT, []);
+      renderAttendance();
+    }
+
+    // 產出 Excel：Attendance（明細）、Stats（彙總）
+    function downloadExcel() {
+      const list = loadJSON(LS.ATT, []);
+      // 明細
+      const detail = list.map(x => ({ 姓名: x.name, 日期: x.date, 備註: x.note || '' }));
+      // 彙總（人員次數、日期分佈）
+      const perName = {};
+      const perDate = {};
+      list.forEach(x => {
+        perName[x.name] = (perName[x.name]||0) + 1;
+        perDate[x.date] = (perDate[x.date]||0) + 1;
+      });
+      const statName = Object.entries(perName).map(([k,v]) => ({ 姓名: k, 次數: v }));
+      const statDate = Object.entries(perDate).map(([k,v]) => ({ 日期: k, 次數: v }));
+
+      const wb = XLSX.utils.book_new();
+      const ws1 = XLSX.utils.json_to_sheet(detail);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Attendance');
+      const ws2 = XLSX.utils.json_to_sheet(statName);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Stats_ByName');
+      const ws3 = XLSX.utils.json_to_sheet(statDate);
+      XLSX.utils.book_append_sheet(wb, ws3, 'Stats_ByDate');
+
+      const ym = new Date();
+      const fname = `出勤統計_${ym.getFullYear()}-${String(ym.getMonth()+1).padStart(2,'0')}.xlsx`;
+      XLSX.writeFile(wb, fname);
+    }
+
+    // ===== Utils =====
+    function escapeHtml(str='') {
+      return str.replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[c]));
+    }
+
+    // ===== 初始 =====
+    function initSeed() {
+      // 僅在首次無資料時寫入示例（避免空白頁）
+      if (!localStorage.getItem(LS.ALBUM)) {
+        saveJSON(LS.ALBUM, [
+          { id: uid(), url: 'https://images.unsplash.com/photo-1558980664-10b3155f0f38?q=80&w=1600&auto=format&fit=crop', title: 'CPR 訓練' },
+          { id: uid(), url: 'https://images.unsplash.com/photo-1530025896945-8f08f5328b9f?q=80&w=1600&auto=format&fit=crop', title: '救護車整備' },
+          { id: uid(), url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1600&auto=format&fit=crop', title: '器材檢點' },
+          { id: uid(), url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop', title: '場站教育訓練' },
+          { id: uid(), url: 'https://images.unsplash.com/photo-1530213786676-41ad9f7736f6?q=80&w=1600&auto=format&fit=crop', title: '社區宣導' },
+          { id: uid(), url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1600&auto=format&fit=crop', title: '急救演練' },
+        ]);
+      }
+      if (!localStorage.getItem(LS.ALBUM_COVER_COUNT)) saveJSON(LS.ALBUM_COVER_COUNT, 6);
+      if (!localStorage.getItem(LS.ALBUM_LINK)) saveJSON(LS.ALBUM_LINK, '');
+    }
+
+    function init() {
+      $('year').textContent = new Date().getFullYear();
+      initSeed();
+      renderArticleList('training');
+      renderArticleList('duty');
+      renderAlbum();
+      renderAttendance();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>
