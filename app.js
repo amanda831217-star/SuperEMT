@@ -1,6 +1,5 @@
-// 單頁版前端邏輯
+// 單頁版前端邏輯（已移除 QR Code 功能）
 const state = { config:null, events:[], attendance:[], trainings:[], experiences:[] };
-
 function $(id){ return document.getElementById(id); }
 
 async function loadConfig(){
@@ -29,13 +28,13 @@ function parseStart(s){
   return new Date(str);
 }
 function fmt(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
-function eventCheckinUrl(eventId){ const {origin,pathname} = window.location; return `${origin}${pathname}?event=${encodeURIComponent(eventId)}`; }
 
-/* 活動卡片 */
+/* 活動卡片（無 QR 按鈕） */
 function renderEvents(){
   const list = $('event-list'); list.innerHTML='';
   if(!state.events.length){ $('no-events').classList.remove('hidden'); return; }
   $('no-events').classList.add('hidden');
+
   state.events.slice().sort((a,b)=> parseStart(a.start)-parseStart(b.start)).forEach(ev=>{
     const count = state.attendance.filter(x=>x.event_id===ev.id && (x.status||'').toLowerCase()!=='rejected').length;
     const card = document.createElement('div'); card.className='card';
@@ -51,15 +50,14 @@ function renderEvents(){
         <div class="text-right">
           <div class="chip">已登記：${count} 人</div>
           <div class="flex gap-2 justify-end mt-2">
-            <button class="btn" data-qr="${ev.id}" data-title="${ev.title}">簽到 QR Code</button>
             <button class="btn btn-primary" data-join="${ev.id}" data-title="${ev.title}">我要報名</button>
           </div>
         </div>
       </div>`;
     list.appendChild(card);
   });
+
   list.querySelectorAll('[data-join]').forEach(b=> b.addEventListener('click', ()=> openJoin(b.dataset.join, b.dataset.title)));
-  list.querySelectorAll('[data-qr]').forEach(b=> b.addEventListener('click', ()=> openQR(b.dataset.qr, b.dataset.title)));
 }
 
 /* 統計 */
@@ -102,40 +100,22 @@ function openJoin(id, title){
 }
 function closeJoin(){ $('join-modal').classList.add('hidden'); $('join-modal').classList.remove('flex'); }
 $('jf-cancel').addEventListener('click', closeJoin);
+
+/* 送出報名（不帶 Content-Type，避免手機 CORS 預檢） */
 $('join-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const payload = { action:'join', event_id:$('jf-event-id').value, name:$('jf-name').value.trim(), division:$('jf-division').value };
   if(!payload.name || !$('jf-confirm').checked) return;
   $('jf-result').textContent='送出中...';
   try{
-    const res = await fetch(state.config.apiBase, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const res = await fetch(state.config.apiBase, { method:'POST', body: JSON.stringify(payload) });
     const out = await res.json();
     if(out.status==='ok'){ $('jf-result').textContent='登記成功！'; await bootstrap(); closeJoin(); }
     else $('jf-result').textContent='失敗：'+(out.message||'請稍後再試');
   }catch{ $('jf-result').textContent='連線失敗'; }
 });
 
-/* QR Code */
-function openQR(eventId, title){
-  const modal=document.createElement('div'); modal.className='fixed inset-0 bg-black/40 flex items-center justify-center p-4';
-  modal.innerHTML = `<div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-    <h3 class="text-lg font-semibold mb-2">簽到 QR Code</h3>
-    <p class="text-sm text-slate-600 mb-3">${title}（${eventId}）</p>
-    <div id="qrbox" class="flex items-center justify-center p-4"></div>
-    <div class="text-xs text-slate-500">掃描後會直接開啟該活動報名視窗。</div>
-    <div class="flex justify-end pt-3"><button class="btn" id="qr-close">關閉</button></div></div>`;
-  document.body.appendChild(modal);
-  new QRCode(modal.querySelector('#qrbox'), { text: eventCheckinUrl(eventId), width:220, height:220 });
-  modal.querySelector('#qr-close').addEventListener('click', ()=> modal.remove());
-}
-
-/* 直接用網址 ?event=... 觸發報名 */
-function handleScanParam(){
-  const p=new URLSearchParams(location.search); const eid=p.get('event');
-  if(eid){ const ev=state.events.find(e=>e.id===eid); openJoin(eid, ev?ev.title:`活動 ${eid}`); }
-}
-
-/* 文章 */
+/* 文章：顯示與投稿（同樣移除 Content-Type） */
 function renderPosts(){
   const tWrap=$('training-list'), eWrap=$('exp-list'); tWrap.innerHTML=''; eWrap.innerHTML='';
   const t=(state.trainings||[]).filter(p=> (p.status||'confirmed')==='confirmed');
@@ -160,26 +140,26 @@ let postKind='training';
 document.getElementById('btn-add-training').addEventListener('click', ()=> openPost('training'));
 document.getElementById('btn-add-exp').addEventListener('click', ()=> openPost('experience'));
 function openPost(kind){
-  postKind=kind; document.getElementById('post-title').textContent = kind==='training'?'分享教育訓練心得':'新增協勤經歷分享';
+  postKind=kind; document.getElementById('post-title')?.remove();
   $('pf-title').value=''; $('pf-content').value=''; $('pf-image').value=''; $('pf-result').textContent='';
-  document.getElementById('post-modal').classList.remove('hidden'); document.getElementById('post-modal').classList.add('flex');
+  document.getElementById('post-modal')?.classList.remove('hidden'); document.getElementById('post-modal')?.classList.add('flex');
 }
-document.getElementById('pf-cancel').addEventListener('click', ()=>{ document.getElementById('post-modal').classList.add('hidden'); document.getElementById('post-modal').classList.remove('flex'); });
-document.getElementById('post-form').addEventListener('submit', async (e)=>{
+document.getElementById('pf-cancel')?.addEventListener('click', ()=>{ document.getElementById('post-modal')?.classList.add('hidden'); document.getElementById('post-modal')?.classList.remove('flex'); });
+document.getElementById('post-form')?.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const payload={ action: postKind==='training'?'post_training':'post_experience',
                   title:$('pf-title').value.trim(), content:$('pf-content').value.trim(), image_url:$('pf-image').value.trim() };
   if(!payload.title || !payload.content) return;
   $('pf-result').textContent='送出中...';
   try{
-    const r=await fetch(state.config.apiBase,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch(state.config.apiBase,{method:'POST', body: JSON.stringify(payload)});
     const out=await r.json();
-    if(out.status==='ok'){ $('pf-result').textContent='已送出（待審核）！'; await bootstrap(); document.getElementById('post-modal').classList.add('hidden'); document.getElementById('post-modal').classList.remove('flex'); }
+    if(out.status==='ok'){ $('pf-result').textContent='已送出（待審核）！'; await bootstrap(); document.getElementById('post-modal')?.classList.add('hidden'); document.getElementById('post-modal')?.classList.remove('flex'); }
     else $('pf-result').textContent='失敗：'+(out.message||'請稍後再試');
   }catch{ $('pf-result').textContent='連線失敗'; }
 });
 
-/* 管理（審核） */
+/* 管理（審核），同樣移除 Content-Type */
 document.getElementById('btn-load-pending').addEventListener('click', async ()=>{
   const pin = $('admin-pin').value.trim() || state.config.adminPin || '';
   const res = await fetch(`${state.config.apiBase}?action=bootstrap`); const data = await res.json();
@@ -195,7 +175,7 @@ document.getElementById('btn-load-pending').addEventListener('click', async ()=>
   pendingAtt.forEach(a=>{
     const row=document.createElement('div'); row.className='card';
     row.innerHTML = `<div class="flex items-center justify-between">
-      <div class="text-sm">${a.timestamp.replace('T',' ')}｜${a.name}（${a.division||'未填'}）→ 活動：${a.event_id}</div>
+      <div class="text-sm">${(a.timestamp||'').replace('T',' ')}｜${a.name}（${a.division||'未填'}）→ 活動：${a.event_id}</div>
       <div class="flex gap-2">
         <button class="btn" data-type="att" data-act="ok"  data-id="${a.id}" data-pin="${pin}">確認</button>
         <button class="btn" data-type="att" data-act="rej" data-id="${a.id}" data-pin="${pin}">退回</button>
@@ -219,12 +199,12 @@ document.getElementById('btn-load-pending').addEventListener('click', async ()=>
 
   document.querySelectorAll('button[data-type="att"]').forEach(b=> b.addEventListener('click', async ()=>{
     const payload={ action:'confirm_attendance', id:b.dataset.id, status: b.dataset.act==='ok'?'confirmed':'rejected', token:b.dataset.pin };
-    const r=await fetch(state.config.apiBase,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch(state.config.apiBase,{method:'POST', body: JSON.stringify(payload)});
     const out=await r.json(); if(out.status==='ok'){ await bootstrap(); b.closest('.card').remove(); } else alert(out.message||'操作失敗');
   }));
   document.querySelectorAll('button[data-type="post"]').forEach(b=> b.addEventListener('click', async ()=>{
     const payload={ action:'confirm_post', kind:b.dataset.kind, id:b.dataset.id, status: b.dataset.act==='ok'?'confirmed':'rejected', token:b.dataset.pin };
-    const r=await fetch(state.config.apiBase,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch(state.config.apiBase,{method:'POST', body: JSON.stringify(payload)});
     const out=await r.json(); if(out.status==='ok'){ await bootstrap(); b.closest('.card').remove(); } else alert(out.message||'操作失敗');
   }));
 });
@@ -238,8 +218,14 @@ async function bootstrap(){
   renderCalendar(); renderEvents(); renderStats(); renderGallery(); renderPosts(); handleScanParam();
 }
 
+/* 若網址帶 ?event=ID，自動打開報名（仍保留，僅移除 QRCode 產生） */
+function handleScanParam(){
+  const p=new URLSearchParams(location.search); const eid=p.get('event');
+  if(eid){ const ev=state.events.find(e=>e.id===eid); if(ev) openJoin(eid, ev.title); }
+}
+
 (async function(){
-  document.getElementById('year').textContent = new Date().getFullYear();
+  $('year').textContent = new Date().getFullYear();
   state.config = await loadConfig();
   await bootstrap();
 })();
