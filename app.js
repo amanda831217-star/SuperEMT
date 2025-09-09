@@ -122,15 +122,49 @@ $('jf-cancel').addEventListener('click', closeJoin);
 /* 送出報名（不帶 Content-Type，避免手機 CORS 預檢） */
 $('join-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const payload = { action:'join', event_id:$('jf-event-id').value, name:$('jf-name').value.trim(), division:$('jf-division').value };
-  if(!payload.name || !$('jf-confirm').checked) return;
+  const eventId = $('jf-event-id').value;
+  const name    = $('jf-name').value.trim();
+  const division= $('jf-division').value;
+  if(!name || !$('jf-confirm').checked) return;
+
+  const payload = { action:'join', event_id:eventId, name, division };
   $('jf-result').textContent='送出中...';
+
   try{
-    const res = await fetch(state.config.apiBase, { method:'POST', body: JSON.stringify(payload) });
-    const out = await res.json();
-    if(out.status==='ok'){ $('jf-result').textContent='登記成功！'; await bootstrap(); closeJoin(); }
-    else $('jf-result').textContent='失敗：'+(out.message||'請稍後再試');
-  }catch{ $('jf-result').textContent='連線失敗'; }
+    const res  = await fetch(state.config.apiBase, { method:'POST', body: JSON.stringify(payload) });
+    const out  = await res.json();
+
+    if(out.status==='ok'){
+      // ① 先在前端「本地」把這筆加進去（立刻改變畫面）
+      const now = new Date();
+      const pad = n=>String(n).padStart(2,'0');
+      const ts  = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      state.attendance.push({
+        id: 'local-'+Math.random().toString(36).slice(2),   // 臨時 id
+        timestamp: ts,
+        name, division,
+        event_id: eventId,
+        status: 'pending'
+      });
+
+      // ② 重新渲染（不用等後端）
+      renderEvents();
+      renderStats();
+      $('jf-result').textContent='登記成功！';
+      closeJoin();
+
+      // ③ 背景再跟後端同步一次（等表單寫入完成，保險）
+      setTimeout(async ()=>{
+        try{
+          await bootstrap(); // 重新抓一次正式資料
+        }catch(e){}
+      }, 1200);
+    }else{
+      $('jf-result').textContent='失敗：'+(out.message||'請稍後再試');
+    }
+  }catch{
+    $('jf-result').textContent='連線失敗';
+  }
 });
 
 /* 文章：顯示與投稿（同樣移除 Content-Type） */
