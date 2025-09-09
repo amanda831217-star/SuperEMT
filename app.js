@@ -21,13 +21,29 @@ function renderCalendar(){
   }
 }
 
-/* 時間處理 */
+/* 時間處理：相容 iOS Safari */
 function parseStart(s){
   if(!s) return null;
-  let str = String(s).trim();
-  if(/^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(str)) str += ' 00:00';
-  str = str.replace(/\//g,'-').replace(' ','T');
-  return new Date(str);
+  let t = String(s).trim();
+
+  // 統一格式
+  if (t.includes('T')) t = t.replace('T',' ');
+  t = t.replace(/\//g,'-');
+
+  // yyyy-mm-dd hh:mm
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/.exec(t);
+  if (!m) {
+    const dIso = new Date(s); // 最後嘗試 ISO 格式
+    return isNaN(dIso.getTime()) ? null : dIso;
+  }
+  const y = parseInt(m[1],10);
+  const mo = Math.max(1, Math.min(12, parseInt(m[2],10))) - 1;
+  const d = parseInt(m[3],10);
+  const hh = m[4] ? parseInt(m[4],10) : 0;
+  const mm = m[5] ? parseInt(m[5],10) : 0;
+
+  // 以本地時間建立，避免被當成 UTC
+  return new Date(y, mo, d, hh, mm, 0, 0);
 }
 function fmt(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 
