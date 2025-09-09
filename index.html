@@ -20,7 +20,6 @@
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800">
-  <!-- 頂部 -->
   <header class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur border-b border-slate-200">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
       <img src="assets/logo.png" class="w-8 h-8" alt="logo"/>
@@ -28,7 +27,6 @@
         <h1 class="text-xl font-bold">救護義消看板平台</h1>
         <p class="text-xs text-slate-600">活動排程・出席統計・相簿・教育訓練・協勤經歷・管理</p>
       </div>
-      <!-- 頂部錨點導覽（單頁） -->
       <nav class="topnav hidden md:flex gap-2">
         <a href="#schedule">行事曆</a>
         <a href="#stats">統計</a>
@@ -137,23 +135,11 @@
     </div>
   </div>
 
-  <!-- 投稿 Modal -->
-  <div id="post-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
-      <h3 class="text-lg font-semibold mb-2" id="post-title">張貼內容</h3>
-      <form id="post-form" class="space-y-3">
-        <div><label class="block text-sm mb-1">標題</label><input id="pf-title" class="w-full border rounded-xl px-3 py-2" required /></div>
-        <div><label class="block text-sm mb-1">內文</label><textarea id="pf-content" class="w-full border rounded-xl px-3 py-2 h-36" required></textarea></div>
-        <div><label class="block text-sm mb-1">圖片網址（可選）</label><input id="pf-image" class="w-full border rounded-xl px-3 py-2" placeholder="https://..." /></div>
-        <div class="flex justify-end gap-2"><button type="button" id="pf-cancel" class="btn">取消</button><button type="submit" class="btn btn-primary">送出</button></div>
-      </form>
-      <p id="pf-result" class="text-sm mt-3"></p>
-    </div>
-  </div>
-
   <footer class="text-center text-xs text-slate-500 py-8">© <span id="year"></span> 救護義消看板平台</footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="app.js"></script>
+  <!-- 注意：已移除 QRCode 套件 -->
+  <script src="app.js?v=6"></script>
 </body>
+</html>
+
 </html>
